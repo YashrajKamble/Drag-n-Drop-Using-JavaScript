@@ -1,29 +1,64 @@
-let lists = document.getElementsByClassName("list");
-let leftBox = document.getElementById("left");
-let rightBox = document.getElementById("right");
+document.addEventListener('DOMContentLoaded', function() {
+    const leftBox = document.getElementById("left");
+    const rightBox = document.getElementById("right");
+    let draggedItem = null;
 
-for (let list of lists) {
-    list.addEventListener("dragstart", function (e) {
-        let selected = e.target;
+    // Function to handle drag start
+    function handleDragStart(e) {
+        draggedItem = this;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.innerHTML);
+    }
 
-        // for left to right drag and drop
-        rightBox.addEventListener("dragover", function (e) {
+    // Function to handle drag end
+    function handleDragEnd() {
+        this.classList.remove('dragging');
+        draggedItem = null;
+    }
+
+    // Function to handle drag over
+    function handleDragOver(e) {
+        if (e.preventDefault) {
             e.preventDefault();
+        }
+        e.dataTransfer.dropEffect = 'move';
+        return false;
+    }
+
+    // Function to handle drop
+    function handleDrop(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        if (draggedItem !== this) {
+            this.appendChild(draggedItem);
+        }
+        return false;
+    }
+
+    // Add event listeners to all list items
+    function addDragEvents() {
+        const lists = document.querySelectorAll('.list');
+        lists.forEach(item => {
+            item.removeEventListener('dragstart', handleDragStart);
+            item.removeEventListener('dragend', handleDragEnd);
+            
+            item.addEventListener('dragstart', handleDragStart);
+            item.addEventListener('dragend', handleDragEnd);
         });
+    }
 
-        rightBox.addEventListener("drop", function (e) {
-            rightBox.appendChild(selected);
-            selected = null;
-        })
+    // Add event listeners to drop zones
+    [leftBox, rightBox].forEach(zone => {
+        zone.addEventListener('dragover', handleDragOver);
+        zone.addEventListener('drop', handleDrop);
+    });
 
-        // for right to left drag and drop
-        leftBox.addEventListener("dragover", function (e) {
-            e.preventDefault();
-        });
+    // Initialize drag events
+    addDragEvents();
 
-        leftBox.addEventListener("drop", function (e) {
-            leftBox.appendChild(selected);
-            selected = null;
-        })
-    })
-}
+    // Add mutation observer to handle dynamically added elements
+    const observer = new MutationObserver(addDragEvents);
+    observer.observe(document.body, { childList: true, subtree: true });
+});
